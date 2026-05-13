@@ -1,0 +1,114 @@
+import org.gradle.internal.os.OperatingSystem
+
+if (!project.ext.has('moquiJepApplied')) {
+    project.ext.moquiJepApplied = true
+
+    apply plugin: 'ru.vyarus.use-python'
+
+    python {
+        envPath = file("${rootDir}/runtime/python_venv")
+    }
+
+    def requirementFiles = files(
+        fileTree(dir: "${rootDir}/runtime/component/moqui-jep", include: "**/requirements.txt")
+    ).files
+
+    def resolveMoquiJepEnv = {
+        def venvDir = file(python.envPath)
+        def isWin = OperatingSystem.current().isWindows()
+        File sitePkgs = null
+        if (isWin) {
+            sitePkgs = new File(venvDir, "Lib/site-packages")
+        } else {
+            File libDir = new File(venvDir, "lib")
+            File pyXY = libDir.listFiles()?.find { it.isDirectory() && it.name.startsWith("python") }
+            if (pyXY != null) sitePkgs = new File(pyXY, "site-packages")
+        }
+
+        File jepDir = sitePkgs != null ? new File(sitePkgs, "jep") : null
+        File jepLib = null
+        if (jepDir != null) {
+            List<File> candidates = isWin ?
+                [new File(jepDir, "jep.dll")] :
+                [new File(jepDir, "libjep.so"), new File(jepDir, "libjep.dylib")]
+            jepLib = candidates.find { it.exists() }
+        }
+
+        return [venvDir: venvDir, sitePkgs: sitePkgs, jepDir: jepDir, jepLib: jepLib]
+    }
+
+    def venvPythonProvider = providers.provider {
+        def venvDir = file(python.envPath)
+        def isWin = OperatingSystem.current().isWindows()
+        def exe = isWin ? new File(venvDir, "Scripts/python.exe") : new File(venvDir, "bin/python")
+        if (!exe.exists()) throw new GradleException("Venv python not found at ${exe}. Run 'moquiJepSetup' first.")
+        exe.absolutePath
+    }
+
+    def requirementInstallTasks = requirementFiles.collect { File rf ->
+        def relativePath = rootDir.toPath().relativize(rf.toPath()).toString()
+        def taskSuffix = relativePath.replaceAll(/[^A-Za-z0-9]+/, "_").replaceAll(/^_+|_+$/, "")
+
+        tasks.register("pipInstallRequirements_${taskSuffix}", Exec) {
+            group = "Python"
+            description = "Install Python requirements from ${relativePath}."
+
+            dependsOn("checkPython")
+            if (tasks.findByName("pipInstall") != null) dependsOn("pipInstall")
+
+            workingDir = rootDir
+            doFirst {
+                logger.lifecycle("Installing requirements from: ${rf}")
+                commandLine venvPythonProvider.get(), "-m", "pip", "install", "-r", rf.absolutePath
+            }
+        }
+    }
+
+    if (tasks.findByName("pipInstallRequirements") == null) {
+        tasks.register("pipInstallRequirements") {
+            group = "Python"
+            description = "Install all moqui-jep requirements.txt files."
+
+            if (!requirementInstallTasks.empty) dependsOn(requirementInstallTasks)
+
+            doLast {
+                if (requirementFiles.empty) logger.lifecycle("No moqui-jep requirements.txt files found. Skipping.")
+            }
+        }
+    }
+
+    if (tasks.findByName("setupPython") == null) {
+        tasks.register("setupPython") {
+            group = "Python"
+            description = "Creates the Python venv and installs moqui-jep dependencies."
+            dependsOn("pipInstallRequirements")
+        }
+    }
+
+    if (tasks.findByName("cleanPython") == null) {
+        tasks.register("cleanPython", Delete) {
+            group = "Python"
+            description = "Remove the Python virtual environment directory."
+            delete file(python.envPath)
+        }
+    }
+
+    tasks.register("moquiJepSetup") {
+        group = "Python"
+        description = "Prepare the Python virtual environment used by the moqui-jep component."
+        dependsOn("setupPython")
+    }
+
+    tasks.register("moquiJepInfo") {
+        group = "Python"
+        description = "Print the moqui-jep Python environment details."
+        doLast {
+            def envInfo = resolveMoquiJepEnv()
+            println "moqui-jep component : ${file("${rootDir}/runtime/component/moqui-jep").absolutePath}"
+            println "Python envPath : ${python.envPath}"
+            println "Venv exists? : ${envInfo.venvDir.exists()}"
+            println "site-packages : ${envInfo.sitePkgs?.absolutePath ?: '-'}"
+            println "JEP native lib : ${envInfo.jepLib?.absolutePath ?: '-'}"
+        }
+    }
+}

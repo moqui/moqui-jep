@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+This software is in the public domain under CC0 1.0 Universal plus a
+Grant of Patent License.
+
+To the extent possible under law, the author(s) have dedicated all
+copyright and related and neighboring rights to this software to the
+public domain worldwide. This software is distributed without any
+warranty.
+
+You should have received a copy of the CC0 Public Domain Dedication
+along with this software (see the LICENSE.md file). If not, see
+<http://creativecommons.org/publicdomain/zero/1.0/>.
+-->
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
+
+    <service verb="test" noun="Jep" type="python" authenticate="false" transaction="ignore"
+            location="component://moqui-jep/script/org/moqui/jep/test_jep.py">
+        <out-parameters>
+            <parameter name="ok"/>
+            <parameter name="pythonVersion"/>
+            <parameter name="numpyVersion"/>
+            <parameter name="siteFound"/>
+            <parameter name="error"/>
+        </out-parameters>
+    </service>
+
+    <service verb="test" noun="NumpyTensor" type="python" authenticate="false" transaction="ignore"
+            location="component://moqui-jep/script/org/moqui/jep/np_tensor_test.py">
+        <out-parameters>
+            <parameter name="ok"/>
+            <parameter name="pythonVersion"/>
+            <parameter name="numpyVersion"/>
+            <parameter name="a" type="list"/>
+            <parameter name="b" type="list"/>
+            <parameter name="add" type="list"/>
+            <parameter name="dot" type="list"/>
+            <parameter name="matmul" type="list"/>
+            <parameter name="error"/>
+        </out-parameters>
+    </service>
+
+    <service verb="test" noun="EntityBridge" type="python" authenticate="false" transaction="ignore"
+            location="component://moqui-jep/script/org/moqui/jep/entity_bridge_test.py">
+        <out-parameters>
+            <parameter name="ok"/>
+            <parameter name="userId"/>
+            <parameter name="locale"/>
+            <parameter name="userGroupCount"/>
+            <parameter name="userGroupIds" type="list"/>
+            <parameter name="error"/>
+        </out-parameters>
+    </service>
+
+    <service verb="test" noun="ControlRobustMimo" type="python" authenticate="false" transaction="ignore"
+            location="component://moqui-jep/script/org/moqui/jep/robust_mimo_smoke.py">
+        <out-parameters>
+            <parameter name="ok"/>
+            <parameter name="analysisOk"/>
+            <parameter name="pythonVersion"/>
+            <parameter name="numpyVersion"/>
+            <parameter name="controlVersion"/>
+            <parameter name="input10Final" type="list"/>
+            <parameter name="input01Final" type="list"/>
+            <parameter name="oppositeFinal" type="list"/>
+            <parameter name="sigmaAtLowFreq" type="list"/>
+            <parameter name="sigmaAtHighFreq" type="list"/>
+            <parameter name="synthesisAvailable"/>
+            <parameter name="gamma1"/>
+            <parameter name="gamma2"/>
+            <parameter name="synthesisError"/>
+            <parameter name="error"/>
+        </out-parameters>
+    </service>
+
+    <service verb="test" noun="PythonScript" authenticate="false" transaction="ignore">
+        <out-parameters>
+            <parameter name="ok"/>
+            <parameter name="runner"/>
+        </out-parameters>
+        <actions>
+            <script location="component://moqui-jep/script/org/moqui/jep/test_python_script.py"/>
+        </actions>
+    </service>
+
+    <service verb="find" noun="PartyPy" type="python" authenticate="false" transaction="ignore"
+            location="component://moqui-jep/script/org/moqui/jep/test_find_party.py">
+        <in-parameters>
+            <parameter name="partyId"/>
+            <parameter name="pseudoId"/>
+            <parameter name="partyTypeEnumId"/>
+            <parameter name="disabled"/>
+            <parameter name="customerStatusId"/>
+            <parameter name="hasDuplicates"/>
+            <parameter name="roleTypeId"/>
+            <parameter name="username"/>
+            <parameter name="combinedName"/>
+            <parameter name="organizationName"/>
+            <parameter name="firstName"/>
+            <parameter name="lastName"/>
+            <parameter name="suffix"/>
+            <parameter name="address1"/>
+            <parameter name="address2"/>
+            <parameter name="city"/>
+            <parameter name="stateProvinceGeoId"/>
+            <parameter name="postalCode"/>
+            <parameter name="countryCode"/>
+            <parameter name="areaCode"/>
+            <parameter name="contactNumber"/>
+            <parameter name="emailAddress"/>
+            <parameter name="assetSerialNumber"/>
+            <parameter name="orderByField"/>
+            <parameter name="pageNoLimit"/>
+            <parameter name="pageIndex" default-value="0"/>
+            <parameter name="pageSize" default-value="20"/>
+            <parameter name="leadingWildcard"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="partyIdList" type="List"/>
+            <parameter name="partyIdListCount"/>
+            <parameter name="partyIdListPageIndex"/>
+            <parameter name="partyIdListPageSize"/>
+            <parameter name="partyIdListPageMaxIndex"/>
+            <parameter name="partyIdListPageRangeLow"/>
+            <parameter name="partyIdListPageRangeHigh"/>
+        </out-parameters>
+    </service>
+</services>

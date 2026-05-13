@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<moqui-conf xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/moqui-conf-3.xsd">
+    <default-property name="jep_shared" value=""/>
+    <default-property name="jep_sandboxed_interpreter" value="false"/>
+
+    <tools>
+        <tool-factory class="org.moqui.impl.tools.JepToolFactory" init-priority="15" disabled="false"/>
+    </tools>
+
+    <cache-list>
+        <cache name="resource.python.location" value-type="java.lang.String"/>
+    </cache-list>
+
+    <resource-facade>
+        <!-- a Python script runner using JEP - Java Embedded Python, which embeds CPython in a JVM through JNI. -->
+        <script-runner extension=".py" class="org.moqui.impl.context.runner.PythonScriptRunner"/>
+    </resource-facade>
+
+    <service-facade>
+        <service-type name="python" runner-class="org.moqui.impl.service.runner.PythonServiceRunner"/>
+    </service-facade>
+</moqui-conf>
