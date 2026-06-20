@@ -54,6 +54,16 @@ class JepToolFactory implements ToolFactory<JepToolFactory> {
         }
 
         try {
+            File pythonSharedLib = findPythonSharedLibrary(env)
+            if (pythonSharedLib != null && pythonSharedLib.exists()) {
+                try {
+                    logger.info("Pre-loading Python shared library: ${pythonSharedLib.absolutePath}")
+                    System.load(pythonSharedLib.absolutePath)
+                } catch (Throwable t) {
+                    logger.warn("Failed to pre-load Python shared library: ${t.message}")
+                }
+            }
+
             MainInterpreter.setJepLibraryPath(env.jepLib.absolutePath)
 
             JepConfig cfg = new JepConfig()
@@ -200,6 +210,55 @@ class JepToolFactory implements ToolFactory<JepToolFactory> {
         }
 
         return new JepEnvironment(jepLib, sitePkgs, null)
+    }
+
+    protected File findPythonSharedLibrary(JepEnvironment env) {
+        boolean isWindows = System.getProperty("os.name", "").toLowerCase().contains("win")
+        File venvDir = new File(ecf.runtimePath, "python_venv")
+        File pythonExe = isWindows ? new File(venvDir, "Scripts/python.exe") : new File(venvDir, "bin/python")
+
+        if (isWindows) {
+            File pyvenvCfg = new File(venvDir, "pyvenv.cfg")
+            if (pyvenvCfg.exists()) {
+                String homePath = null
+                pyvenvCfg.eachLine { line ->
+                    if (line.trim().startsWith("home")) {
+                        def parts = line.split("=")
+                        if (parts.length == 2) homePath = parts[1].trim()
+                    }
+                }
+                if (homePath) {
+                    File homeDir = new File(homePath)
+                    if (homeDir.exists()) {
+                        File[] dllFiles = homeDir.listFiles(new FilenameFilter() {
+                            @Override
+                            boolean accept(File dir, String name) {
+                                return name.toLowerCase().startsWith("python3") && name.toLowerCase().endsWith(".dll")
+                            }
+                        })
+                        if (dllFiles) {
+                            File specificDll = dllFiles.find { !it.name.equalsIgnoreCase("python3.dll") }
+                            return specificDll ?: dllFiles[0]
+                        }
+                    }
+                }
+            }
+        } else {
+            if (pythonExe.exists()) {
+                try {
+                    def proc = [pythonExe.absolutePath, "-c", "import sysconfig, os; lib = sysconfig.get_config_var('LDLIBRARY') or sysconfig.get_config_var('LIBRARY'); libdir = sysconfig.get_config_var('LIBDIR') or sysconfig.get_config_var('srcdir'); print(os.path.join(libdir, lib) if libdir and lib else '')"].execute()
+                    proc.waitFor()
+                    String path = proc.text.trim()
+                    if (path) {
+                        File libFile = new File(path)
+                        if (libFile.exists()) return libFile
+                    }
+                } catch (Throwable t) {
+                    logger.warn("Failed to find Python shared library via subprocess: ${t.message}")
+                }
+            }
+        }
+        return null
     }
 
     @CompileStatic

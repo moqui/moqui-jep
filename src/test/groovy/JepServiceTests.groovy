@@ -104,6 +104,14 @@ class JepServiceTests extends Specification {
         (result.userGroupIds as List).size() == (result.userGroupCount as Number).intValue()
     }
 
+    @spock.lang.IgnoreIf({
+        try {
+            Class.forName("mantle.party.PartyServices")
+            return false
+        } catch (ClassNotFoundException e) {
+            return true
+        }
+    })
     def "python service can mirror Mantle findParty Groovy logic"() {
         given:
         Map parameters = [
