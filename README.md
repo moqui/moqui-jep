@@ -11,6 +11,41 @@ What this component contains:
 - Python package requirements
 - Root Gradle helpers to prepare `runtime/python_venv`
 
+## System prerequisite: Python installation
+
+Python is a **system-level dependency** for this component, in the same way the JVM is a system-level dependency for Moqui Framework itself. The Gradle setup (`moquiJepSetup`) only creates a virtual environment on top of an existing Python installation — it does not install Python.
+
+A compatible CPython 3.x installation must be present on the host machine before running any Moqui JEP feature or test. [Miniconda](https://docs.conda.io/en/latest/miniconda.html) is the recommended distribution because it provides a self-contained Python with its shared library (`libpython3.x.so`) in a predictable location.
+
+### Required environment variable
+
+Because JEP loads CPython through JNI, the Python shared library (`libpython3.x.so.1.0`) must be visible to the JVM at runtime via `LD_LIBRARY_PATH` (Linux/macOS) or `PATH` (Windows). Without this, the JVM will throw `UnsatisfiedLinkError: libpython3.x.so.1.0: cannot open shared object file` when the first Python interpreter is created.
+
+**Linux / macOS (Miniconda example):**
+
+```bash
+export LD_LIBRARY_PATH=/path/to/miniconda3/lib:$LD_LIBRARY_PATH
+```
+
+**Windows (Miniconda example):**
+
+Add `C:\path\to\miniconda3\` to the `PATH` environment variable (the directory that contains `python3x.dll`).
+
+### Quick start
+
+```bash
+# 1. Install Miniconda (or any CPython 3.x) on the host machine
+
+# 2. Create the virtual environment and install Python dependencies
+./gradlew moquiJepSetup -Djep_python_path=/path/to/miniconda3/bin
+
+# 3. Export the shared library path (Linux/macOS)
+export LD_LIBRARY_PATH=/path/to/miniconda3/lib:$LD_LIBRARY_PATH
+
+# 4. Run Moqui or the moqui-jep tests
+./gradlew :runtime:component:moqui-jep:test -Djep_python_path=/path/to/miniconda3/bin
+```
+
 Default behavior:
 
 - Moqui starts even if Python/Jep is not installed
